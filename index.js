@@ -6,9 +6,6 @@ import {
   MessageFlags,
   Partials,
 } from "discord.js";
-import { DateTime } from "luxon";
-
-const SUPPORTED_TIMEZONES = Intl.supportedValuesOf("timeZone");
 
 const client = new Client({
   intents: [
@@ -25,53 +22,6 @@ const client = new Client({
   ],
 });
 
-function getContent(unix, preferUsability = false) {
-  if (preferUsability)
-    return `
-<t:${unix}>: \`<t:${unix}>\`
-<t:${unix}:t>: \`<t:${unix}:t>\`
-<t:${unix}:T>: \`<t:${unix}:T>\`
-<t:${unix}:d>: \`<t:${unix}:d>\`
-<t:${unix}:D>: \`<t:${unix}:D>\`
-<t:${unix}:f>: \`<t:${unix}:f>\`
-<t:${unix}:F>: \`<t:${unix}:F>\`
-<t:${unix}:s>: \`<t:${unix}:s>\`
-<t:${unix}:S>: \`<t:${unix}:S>\`
-<t:${unix}:R>: \`<t:${unix}:R>\`
--# [Consider using @time instead](<https://x.com/advaithj1/status/2012686850989920377>)
-	`;
-  else
-    return `
-\`<t:${unix}>\`: <t:${unix}>
-\`<t:${unix}:t>\`: <t:${unix}:t>
-\`<t:${unix}:T>\`: <t:${unix}:T>
-\`<t:${unix}:d>\`: <t:${unix}:d>
-\`<t:${unix}:D>\`: <t:${unix}:D>
-\`<t:${unix}:f>\`: <t:${unix}:f>
-\`<t:${unix}:F>\`: <t:${unix}:F>
-\`<t:${unix}:s>\`: <t:${unix}:s>
-\`<t:${unix}:S>\`: <t:${unix}:S>
-\`<t:${unix}:R>\`: <t:${unix}:R>
--# [Consider using @time instead](<https://x.com/advaithj1/status/2012686850989920377>)
-	`;
-}
-
-function getConsoleContent(
-  currenttimestamp,
-  pub,
-  day,
-  month,
-  year,
-  hour,
-  minute,
-  second,
-  timezone,
-) {
-  if (currenttimestamp)
-    return `[currenttimestamp] Executed /currenttimestamp (Public: ${pub})`;
-  return `[timestamp] Day: ${day}; Month: ${month}; Year: ${year}; Hour: ${hour}; Minute: ${minute}; Second: ${second}; Timezone: ${timezone}; Public: ${pub}`;
-}
-
 client.on(Events.ClientReady, () => {
   console.log(`Logged in as ${client.user.tag}!`); // Logging
 });
@@ -86,115 +36,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     } else {
       await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     }
-    let unix = 0;
-    let { day, month, year, hour, minute, second, timezone, src, dst } = [
-      1,
-      1,
-      1,
-      1,
-      1,
-      1,
-      "",
-      "",
-      "",
-    ];
     switch (interaction.commandName) {
-      case "timestamp":
-        day = interaction.options.getInteger("day") ?? 1;
-        month = interaction.options.getInteger("month") ?? 1;
-        year = interaction.options.getInteger("year") ?? 1970;
-        hour = interaction.options.getInteger("hour") ?? 0;
-        minute = interaction.options.getInteger("minute") ?? 0;
-        second = interaction.options.getInteger("second") ?? 0;
-        timezone = interaction.options.getString("timezone");
-        //Intl.DateTimeFormat().resolvedOptions().timeZone // own timezone
-        unix = DateTime.fromObject(
-          {
-            day,
-            month,
-            year,
-            hour,
-            minute,
-            second,
-          },
-          { zone: timezone },
-        ).toUnixInteger();
-        await interaction.editReply({
-          content: getContent(unix, preferUsability),
-        });
-        console.log(
-          getConsoleContent(
-            false,
-            pub,
-            day,
-            month,
-            year,
-            hour,
-            minute,
-            second,
-            timezone,
-          ),
-        );
-        break;
-      case "currenttimestamp":
-        unix = DateTime.now().toUnixInteger();
-        await interaction.editReply({
-          content: getContent(unix, preferUsability),
-        });
-        console.log(getConsoleContent(true, pub));
-        break;
-      case "converttime":
-        day = interaction.options.getInteger("day") ?? 1;
-        month = interaction.options.getInteger("month") ?? 1;
-        year = interaction.options.getInteger("year") ?? 1;
-        hour = interaction.options.getInteger("hour") ?? 1;
-        minute = interaction.options.getInteger("minute") ?? 1;
-        second = interaction.options.getInteger("second") ?? 1;
-        src = interaction.options.getString("src");
-        dst = interaction.options.getString("dst");
-        let srcTimeObj = DateTime.fromObject(
-          {
-            day,
-            month,
-            year,
-            hour,
-            minute,
-            second,
-          },
-          { zone: src },
-        );
-        let srcTime = srcTimeObj.toLocaleString(
-          DateTime.DATETIME_HUGE_WITH_SECONDS,
-          { locale: "en-US" },
-        );
-        let dstTime = srcTimeObj
-          .setZone(dst)
-          .toLocaleString(DateTime.DATETIME_HUGE_WITH_SECONDS, {
-            locale: "en-US",
-          });
-        await interaction.editReply({
-          content: `\`${srcTime}\` (Timezone: \`${src}\`) in \`${dst}\` is \`${dstTime}\``,
-        });
-        console.log(
-          `[converttime] Day: ${day}; Month: ${month}; Year: ${year}; Hour: ${hour}; Minute: ${minute}; Second: ${second}; Source: ${src}; Destination: ${dst}; Public: ${pub}`,
-        );
-        break;
-      case "convertcurrenttime":
-        timezone = interaction.options.getString("timezone");
-        let currenttime = DateTime.now()
-          .setZone(timezone)
-          .toLocaleString(DateTime.DATETIME_HUGE_WITH_SECONDS, {
-            locale: "en-US",
-          });
-        await interaction.editReply({
-          content: `The current time in \`${interaction.options.getString(
-            "timezone",
-          )}\` is \`${currenttime}\``,
-        });
-        console.log(
-          `[convertcurrenttime] Executed /convertcurrenttime (Public: ${pub})`,
-        );
-        break;
       case "temperature":
         let response = "N/A";
         let source = interaction.options.getString("source");
@@ -331,27 +173,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
           content: "subcommand not known! How did you even call it?",
         });
     }
-  } else if (interaction.isAutocomplete()) {
-    let timezoneResponse = SUPPORTED_TIMEZONES.filter((zone) => {
-      return (
-        zone
-          .toLowerCase()
-          .indexOf(
-            interaction.options.getFocused().replace(" ", "_").toLowerCase(),
-          ) >= 0
-      );
-    });
-    timezoneResponse.length = Math.min(timezoneResponse.length, 25); // send max. 25 choices
-    await interaction
-      .respond(
-        timezoneResponse.map((zone) => {
-          return {
-            name: zone,
-            value: zone,
-          };
-        }),
-      )
-      .catch((err) => console.error(JSON.stringify(err)));
   }
 });
 
