@@ -1,6 +1,6 @@
 services:
   timestamp-temperature-bot:
-    image: ghcr.io/wissididom/timestamp-temperature-bot
+    image: ghcr.io/wissididom/temperature-conversion-integration
     restart: unless-stopped
     environment:
       NODE_ENV: production
