@@ -23,7 +23,7 @@ jobs:
     name: "Build"
     runs-on: ubuntu-latest
     env:
-      IMAGE_NAME: "wissididom/timestamp-temperature-bot"
+      IMAGE_NAME: "wissididom/temperature-conversion-integration"
 
     steps:
       - uses: actions/checkout@v6
